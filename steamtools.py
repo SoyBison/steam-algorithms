@@ -3,6 +3,7 @@ from requests.exceptions import SSLError
 import time
 import pandas as pd
 import dataset
+import re
 
 DB = dataset.connect('sqlite:///steamdata.db')
 
@@ -77,7 +78,7 @@ def finedetails(id):
         tagtable = DB.create_table('tags', primary_id='appid', primary_type=DB.types.text)
     for tag in tags:
         if tag not in tagtable.columns:
-            tagtable.create_column(tag, default=0)
+            tagtable.create_column(re.sub('[- ]+', '', tag), default=0, type=DB.types.integer)
     tagtable.insert(tags)
 
     languagetable = DB['languages']
@@ -86,7 +87,7 @@ def finedetails(id):
         languagetable = DB.create_table('languages', primary_id='appid', primary_type=DB.types.text)
     for tongue in languages:
         if tongue not in languagetable.columns:
-            languagetable.create_column(tongue, default=0)
+            languagetable.create_column(re.sub('[- ]+', '', tongue), default=0, type=DB.types.integer)
     languagetable.insert(languages)
 
     genretable = DB['genre']
@@ -95,12 +96,11 @@ def finedetails(id):
         genretable = DB.create_table('genre', primary_id='appid', primary_type=DB.types.text)
     for gen in languages:
         if gen not in genretable.columns:
-            genretable.create_column(gen, default=0)
+            genretable.create_column(re.sub('[- ]+', '', gen), default=0, type=DB.types.integer)
     genretable.insert(genres)
     time.sleep(1)
 
 
 if __name__ == '__main__':
-    populate_applist()
     for row in DB['app']:
         finedetails(row['appid'])
