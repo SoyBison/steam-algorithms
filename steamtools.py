@@ -74,29 +74,30 @@ def finedetails(id):
     genres = json_data['genre']
 
     tagtable = DB['tags']
+    tags = {re.sub('[- ]+', '', k): tags[k] for k in tags}
     if not tagtable:
         tagtable = DB.create_table('tags', primary_id='appid', primary_type=DB.types.text)
     for tag in tags:
         if tag not in tagtable.columns:
-            tagtable.create_column(re.sub('[- ]+', '', tag), default=0, type=DB.types.integer)
+            tagtable.create_column(tag, default=0, type=DB.types.integer)
     tagtable.insert(tags)
 
     languagetable = DB['languages']
-    languages = {ling: 1 for ling in languages}
+    languages = {re.sub('[- ]+', '', ling): 1 for ling in languages.split(',')}
     if not languagetable:
         languagetable = DB.create_table('languages', primary_id='appid', primary_type=DB.types.text)
     for tongue in languages:
         if tongue not in languagetable.columns:
-            languagetable.create_column(re.sub('[- ]+', '', tongue), default=0, type=DB.types.integer)
+            languagetable.create_column(tongue, default=0, type=DB.types.integer)
     languagetable.insert(languages)
 
     genretable = DB['genre']
-    genres = {gen: 1 for gen in genres}
+    genres = {re.sub('[- ]+', '', gen): 1 for gen in genres.split(',')}
     if not genretable:
         genretable = DB.create_table('genre', primary_id='appid', primary_type=DB.types.text)
-    for gen in languages:
+    for gen in genres:
         if gen not in genretable.columns:
-            genretable.create_column(re.sub('[- ]+', '', gen), default=0, type=DB.types.integer)
+            genretable.create_column(gen, default=0, type=DB.types.integer)
     genretable.insert(genres)
     time.sleep(1)
 
