@@ -49,6 +49,7 @@ def populate_applist(_p=0):
     url = "https://steamspy.com/api.php"
 
     json_data = get_request(url, parameters={"request": "all", "page": _p})
+
     if len(json_data) == 0:
         return
     steam_spy_all = pd.DataFrame.from_dict(json_data, orient='index')
@@ -58,5 +59,48 @@ def populate_applist(_p=0):
     apptable = DB['app']
     apptable.insert_many(records)
     print(f'Populated page {_p}')
-
+    time.sleep(60)
     populate_applist(_p=_p+1)
+
+
+def finedetails(id):
+    url = "https://steamspy.com/api.php"
+    json_data = get_request(url, parameters={"request": "appdetails", "appid": id})
+    print(f'getting data for id: {id}')
+
+    tags = json_data['tags']
+    languages = json_data['languages']
+    genres = json_data['genre']
+
+    tagtable = DB['tags']
+    if not tagtable:
+        tagtable = DB.create_table('tags', primary_id='appid', primary_type=DB.types.text)
+    for tag in tags:
+        if tag not in tagtable.columns:
+            tagtable.create_column(tag, default=0)
+    tagtable.insert(tags)
+
+    languagetable = DB['languages']
+    languages = {ling: 1 for ling in languages}
+    if not languagetable:
+        languagetable = DB.create_table('languages', primary_id='appid', primary_type=DB.types.text)
+    for tongue in languages:
+        if tongue not in languagetable.columns:
+            languagetable.create_column(tongue, default=0)
+    languagetable.insert(languages)
+
+    genretable = DB['genre']
+    genres = {gen: 1 for gen in genres}
+    if not genretable:
+        genretable = DB.create_table('genre', primary_id='appid', primary_type=DB.types.text)
+    for gen in languages:
+        if gen not in genretable.columns:
+            genretable.create_column(gen, default=0)
+    genretable.insert(genres)
+    time.sleep(1)
+
+
+if __name__ == '__main__':
+    populate_applist()
+    for row in DB['app']:
+        finedetails(row['appid'])
