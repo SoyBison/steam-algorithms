@@ -9,6 +9,7 @@ DB = dataset.connect('sqlite:///steamdata.db')
 KNOWN_APPS = DB.query('SELECT appid FROM tags')
 KNOWN_APPS = {a['appid'] for a in KNOWN_APPS}
 
+
 def get_request(url, parameters=None):
     """Return json-formatted response of a get request using optional parameters.
     Shamelessly stolen from https://nik-davis.github.io/posts/2019/steam-data-collection/
@@ -67,7 +68,6 @@ def populate_applist(_p=0):
 
 def finedetails(appid):
     url = "https://steamspy.com/api.php"
-    
 
     if appid in KNOWN_APPS:
         print(f'Already scraped data for id: {appid}, skipping...')
@@ -79,6 +79,7 @@ def finedetails(appid):
     tags = json_data['tags']
     languages = json_data['languages']
     genres = json_data['genre']
+    primary = {'appid': appid}
 
     tagtable = DB['tags']
     tags = {re.sub('[- .\'+]+', '', k): tags[k] for k in tags if k!=''}
@@ -87,6 +88,7 @@ def finedetails(appid):
     for tag in tags:
         if tag not in tagtable.columns:
             tagtable.create_column(tag, default=0, type=DB.types.integer)
+    tags.update(primary)
     tagtable.insert(tags)
 
     languagetable = DB['languages']
@@ -96,6 +98,7 @@ def finedetails(appid):
     for tongue in languages:
         if tongue not in languagetable.columns:
             languagetable.create_column(tongue, default=0, type=DB.types.integer)
+    languages.update(primary)
     languagetable.insert(languages)
 
     genretable = DB['genre']
@@ -105,6 +108,7 @@ def finedetails(appid):
     for gen in genres:
         if gen not in genretable.columns:
             genretable.create_column(gen, default=0, type=DB.types.integer)
+    genres.update(primary)
     genretable.insert(genres)
     time.sleep(1)
 
