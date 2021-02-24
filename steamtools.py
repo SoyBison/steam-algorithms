@@ -6,7 +6,8 @@ import dataset
 import re
 
 DB = dataset.connect('sqlite:///steamdata.db')
-
+KNOWN_APPS = DB.query('SELECT appid FROM tags')
+KNOWN_APPS = {a['appid'] for a in KNOWN_APPS}
 
 def get_request(url, parameters=None):
     """Return json-formatted response of a get request using optional parameters.
@@ -64,17 +65,23 @@ def populate_applist(_p=0):
     populate_applist(_p=_p+1)
 
 
-def finedetails(id):
+def finedetails(appid):
     url = "https://steamspy.com/api.php"
-    json_data = get_request(url, parameters={"request": "appdetails", "appid": id})
-    print(f'getting data for id: {id}')
+    
 
+    if appid in KNOWN_APPS:
+        print(f'Already scraped data for id: {appid}, skipping...')
+        return
+    else:
+        print(f'getting data for id: {appid}')
+
+    json_data = get_request(url, parameters={"request": "appdetails", "appid": appid})
     tags = json_data['tags']
     languages = json_data['languages']
     genres = json_data['genre']
 
     tagtable = DB['tags']
-    tags = {re.sub('[- ]+', '', k): tags[k] for k in tags}
+    tags = {re.sub('[- .\'+]+', '', k): tags[k] for k in tags if k!=''}
     if not tagtable:
         tagtable = DB.create_table('tags', primary_id='appid', primary_type=DB.types.text)
     for tag in tags:
@@ -83,7 +90,7 @@ def finedetails(id):
     tagtable.insert(tags)
 
     languagetable = DB['languages']
-    languages = {re.sub('[- ]+', '', ling): 1 for ling in languages.split(',')}
+    languages = {re.sub('[- .\'+]+', '', ling): 1 for ling in languages.split(',') if ling!=''}
     if not languagetable:
         languagetable = DB.create_table('languages', primary_id='appid', primary_type=DB.types.text)
     for tongue in languages:
@@ -92,7 +99,7 @@ def finedetails(id):
     languagetable.insert(languages)
 
     genretable = DB['genre']
-    genres = {re.sub('[- ]+', '', gen): 1 for gen in genres.split(',')}
+    genres = {re.sub('[- .\'+]+', '', gen): 1 for gen in genres.split(',') if gen!=''}
     if not genretable:
         genretable = DB.create_table('genre', primary_id='appid', primary_type=DB.types.text)
     for gen in genres:
@@ -103,5 +110,6 @@ def finedetails(id):
 
 
 if __name__ == '__main__':
+    populate_applist()
     for row in DB['app']:
         finedetails(row['appid'])
