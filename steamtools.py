@@ -5,10 +5,14 @@ import pandas as pd
 import dataset
 import re
 
-DB = dataset.connect('sqlite:///steamdata.db')
-KNOWN_APPS = DB.query('SELECT appid FROM tags')
-KNOWN_APPS = {a['appid'] for a in KNOWN_APPS}
+from sqlalchemy.exc import OperationalError
 
+DB = dataset.connect('sqlite:///steamdata.db')
+try:
+    KNOWN_APPS = DB.query('SELECT appid FROM tags')
+    KNOWN_APPS = {a['appid'] for a in KNOWN_APPS}
+except OperationalError:
+    KNOWN_APPS = set() 
 
 def get_request(url, parameters=None):
     """Return json-formatted response of a get request using optional parameters.
