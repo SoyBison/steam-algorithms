@@ -1,9 +1,10 @@
 import requests
-from requests.exceptions import SSLError
+from requests.exceptions import SSLError, ConnectionError
 import time
 import pandas as pd
 import dataset
 import re
+import json
 
 from sqlalchemy.exc import OperationalError
 
@@ -78,8 +79,13 @@ def finedetails(appid):
         return
     else:
         print(f'getting data for id: {appid}')
-
-    json_data = get_request(url, parameters={"request": "appdetails", "appid": appid})
+    try:
+        json_data = get_request(url, parameters={"request": "appdetails", "appid": appid})
+    except (json.decoder.JSONDecodeError, ConnectionError):
+        time.sleep(10)
+        print(f'Data scrape for id: {appid} failed, retrying.')
+        finedetails(appid)
+        return
     tags = json_data['tags']
     languages = json_data['languages']
     genres = json_data['genre']
@@ -96,28 +102,30 @@ def finedetails(appid):
     tagtable.insert(tags)
 
     languagetable = DB['languages']
-    languages = {re.sub('[- .\'+]+', '', ling): 1 for ling in languages.split(',') if ling!=''}
-    if not languagetable:
-        languagetable = DB.create_table('languages', primary_id='appid', primary_type=DB.types.text)
-    for tongue in languages:
-        if tongue not in languagetable.columns:
-            languagetable.create_column(tongue, default=0, type=DB.types.integer)
-    languages.update(primary)
-    languagetable.insert(languages)
+    if languages:
+        languages = {re.sub('[- .\'+]+', '', ling): 1 for ling in languages.split(',') if ling!=''}
+        if not languagetable:
+            languagetable = DB.create_table('languages', primary_id='appid', primary_type=DB.types.text)
+        for tongue in languages:
+            if tongue not in languagetable.columns:
+                languagetable.create_column(tongue, default=0, type=DB.types.integer)
+        languages.update(primary)
+        languagetable.insert(languages)
 
     genretable = DB['genre']
-    genres = {re.sub('[- .\'+]+', '', gen): 1 for gen in genres.split(',') if gen!=''}
-    if not genretable:
-        genretable = DB.create_table('genre', primary_id='appid', primary_type=DB.types.text)
-    for gen in genres:
-        if gen not in genretable.columns:
-            genretable.create_column(gen, default=0, type=DB.types.integer)
-    genres.update(primary)
-    genretable.insert(genres)
-    time.sleep(1)
+    if genres:
+        genres = {re.sub('[- .\'+]+', '', gen): 1 for gen in genres.split(',') if gen!=''}
+        if not genretable:
+            genretable = DB.create_table('genre', primary_id='appid', primary_type=DB.types.text)
+        for gen in genres:
+            if gen not in genretable.columns:
+                genretable.create_column(gen, default=0, type=DB.types.integer)
+        genres.update(primary)
+        genretable.insert(genres)
+        time.sleep(1)
 
 
 if __name__ == '__main__':
-    populate_applist()
+    # populate_applist()
     for row in DB['app']:
         finedetails(row['appid'])
