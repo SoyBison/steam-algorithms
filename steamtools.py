@@ -125,7 +125,3 @@ def finedetails(appid):
         time.sleep(1)
 
 
-if __name__ == '__main__':
-    # populate_applist()
-    for row in DB['app']:
-        finedetails(row['appid'])
