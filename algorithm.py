@@ -18,6 +18,7 @@ def wilson_score(successes, failures, alpha=0.05):
 
     return (phat + z**2 / (2*n) - z * np.sqrt((phat*(1-phat) + z**2 / (4*n)) / n))/(1 + z**2 / n)
 
+
 class Game:
     def __init__(self, x: np.ndarray, q: float, num_players_2wk: int, discount: int):
         self.x = x
@@ -30,7 +31,8 @@ class Game:
         x = np.random.uniform(size=425)
         x = Normalizer(norm='l1').fit_transform(x)
         np2wk = np.random.randint(0, 10000)
-        return cls(x, np.random.uniform)
+        discount = np.random.binomial(15, 0.1) * 5
+        return cls(x, np.random.uniform, np2wk, discount)
 
     @classmethod
     def from_id(cls, appid):

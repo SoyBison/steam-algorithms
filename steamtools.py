@@ -8,7 +8,7 @@ import json
 
 from sqlalchemy.exc import OperationalError
 
-DB = dataset.connect('sqlite:///steamdata.db')
+DB = dataset.connect('sqlite:///steamdata')
 try:
     KNOWN_APPS = DB.query('SELECT appid FROM tags')
     KNOWN_APPS = {a['appid'] for a in KNOWN_APPS}
